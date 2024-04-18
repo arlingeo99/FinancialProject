@@ -1,4 +1,4 @@
-name: Ci-CD Pipeline
+name: Deploy to Cloud
 
 on:
   push:
@@ -6,18 +6,18 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build
-        run: npm run build
-
-      - name: Test
-        run: npm test
+      # Add any build steps here if necessary (e.g., for compiling CSS or minifying JavaScript)
+      
+      - name: Deploy to Cloud Provider
+        run: |
+          # Add commands to deploy your static website to your cloud provider
+          # For example, if you're using AWS S3, you might use AWS CLI commands to sync your files to an S3 bucket
+          echo "Deploying to cloud provider..."
+          # Add deployment commands here
