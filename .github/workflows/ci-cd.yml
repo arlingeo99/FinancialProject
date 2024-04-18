@@ -15,6 +15,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Create directory if not exists
+        run: sudo mkdir -p /var/www/html
+
+      - name: Install Apache (if not already installed)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apache2
+
+      - name: Start or restart Apache service
+        run: sudo systemctl restart apache2
+
       - name: Deploy to Server
         uses: easingthemes/ssh-deploy@main
         env:
@@ -33,6 +44,6 @@ jobs:
             if [ -f /var/www/html/index.html ]; then
               sudo rm -rf /var/www/html/index.html
             fi
-            sudo mv FinancialProject/* /var/www/html
+            sudo mv Project/* /var/www/html
             sudo chown -R www-data:www-data /var/www/html
-            sudo service apache2 restart
+            sudo systemctl restart apache2
