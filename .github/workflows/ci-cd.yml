@@ -1,4 +1,4 @@
-name: CI-CD Pipeline
+name: CI-CD Pipeline to deploy to AWS EC2
 
 on:
   push:
