@@ -30,15 +30,16 @@ jobs:
           push: true
           tags: arlingeorge/websiteproject:${{ github.sha }}
 
-      - name: SSH into EC2 and deploy
-        uses: appleboy/ssh-action@master
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT }}
-          script: |
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Deploy on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'bash -s' << 'ENDSSH'
             docker pull arlingeorge/websiteproject:${{ github.sha }}
             docker stop newwebsite || true
             docker rm newwebsite || true
             docker run -d --name newwebsite -p 80:80 arlingeorge/websiteproject:${{ github.sha }}
+          ENDSSH
