@@ -1,4 +1,4 @@
-name: Deploy to Cloud
+name: CI-CD Pipeline
 
 on:
   push:
@@ -13,11 +13,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      # Add any build steps here if necessary (e.g., for compiling CSS or minifying JavaScript)
-      
-      - name: Deploy to Cloud Provider
+      - name: Install AWS CLI
         run: |
-          # Add commands to deploy your static website to your cloud provider
-          # For example, if you're using AWS S3, you might use AWS CLI commands to sync your files to an S3 bucket
-          echo "Deploying to cloud provider..."
-          # Add deployment commands here
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      - name: Copy files to EC2 instance
+        run: |
+          scp -r ./* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/var/www/html/
+
+      - name: SSH into EC2 instance and restart web server
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'sudo systemctl restart apache2'
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
