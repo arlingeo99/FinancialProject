@@ -1,5 +1,6 @@
-name: CI-CD Pipeline to deploy to AWS EC2
+name: Deploy Code to Application Server
 
+# Trigger deployment only on push to main branch
 on:
   push:
     branches:
@@ -7,25 +8,31 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to EC2 on main branch push
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install AWS CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y awscli
+      - name: Deploy to Server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.EC2_HOST }}
+          REMOTE_USER: ${{ secrets.EC2_USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR }}
 
-      - name: Copy files to EC2 instance
-        run: |
-          scp -r ./* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/var/www/html/
-
-      - name: SSH into EC2 instance and restart web server
-        run: |
-          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'sudo systemctl restart apache2'
-
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            if [ -f /var/www/html/index.html ]; then
+              sudo rm -rf /var/www/html/index.html
+            fi
+            sudo mv FinancialProject/* /var/www/html
+            sudo chown -R www-data:www-data /var/www/html
+            sudo service apache2 restart
