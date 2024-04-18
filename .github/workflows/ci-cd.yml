@@ -8,42 +8,25 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to EC2 on main branch push
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Create directory if not exists
-        run: sudo mkdir -p /var/www/html
-
-      - name: Install Apache (if not already installed)
+      - name: Install AWS CLI
         run: |
           sudo apt-get update
-          sudo apt-get install -y apache2
+          sudo apt-get install -y awscli
 
-      - name: Start or restart Apache service
-        run: sudo systemctl restart apache2
+      - name: Copy files to EC2 instance
+        run: |
+          scp -r ./* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:${{ secrets.TARGET_DIR }}
 
-      - name: Deploy to Server
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.EC2_HOST }}
-          REMOTE_USER: ${{ secrets.EC2_USERNAME }}
-          TARGET: ${{ secrets.TARGET_DIR }}
+      - name: SSH into EC2 instance and restart web server
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'sudo systemctl restart apache2'
 
-      - name: Executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            if [ -f /var/www/html/index.html ]; then
-              sudo rm -rf /var/www/html/index.html
-            fi
-            sudo mv application code/* /var/www/html
-            sudo chown -R www-data:www-data /var/www/html
-            sudo systemctl restart apache2
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
